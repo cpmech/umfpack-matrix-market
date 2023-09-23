@@ -14,15 +14,14 @@
 #define ABS(x) ((x) >= 0 ? (x) : -(x))
 #define MAX(a, b) (((a) > (b)) ? (a) : (b))
 
-static double resid(
-    // Code from UMFPACK: compute the residual, r = Ax-b and return max_norm(r)
-    int32_t n,
-    const double *x,
-    const double *b,
-    double *r,
-    int32_t Ap[],
-    int32_t Ai[],
-    double Ax[]) {
+// Code from UMFPACK: compute the residual, r = Ax-b and return max_norm(r)
+static double resid(int32_t n,
+                    const double *x,
+                    const double *b,
+                    double *r,
+                    int32_t Ap[],
+                    int32_t Ai[],
+                    double Ax[]) {
     int32_t i, j, p;
     double norm;
     for (i = 0; i < n; i++) {
