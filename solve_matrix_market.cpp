@@ -161,8 +161,15 @@ std::unique_ptr<CooMatrix> read_matrix_market(const std::string &filename) {
 
 int main(int argc, char **argv) try {
     // read the matrix
-    auto home = std::string(std::getenv("HOME"));
-    auto matrix = home + "/Downloads/matrix-market/bfwb62.mtx";
+    auto matrix = std::string("bfwb62.mtx");
+    bool verbose = false;
+    if (argc > 1) {
+        std::string arg1(argv[1]);
+        matrix = arg1;
+    }
+    if (argc > 2) {
+        verbose = true;
+    }
 
     // read COO
     auto coo = read_matrix_market(matrix);
@@ -176,6 +183,7 @@ int main(int argc, char **argv) try {
     double info[UMFPACK_INFO];
     double control[UMFPACK_CONTROL];
     umfpack_di_defaults(control);
+    control[UMFPACK_PRL] = 2.0;
 
     // allocate CSC arrays
     int32_t *ap = (int32_t *)malloc((coo->m + 1) * sizeof(int32_t));
@@ -262,6 +270,10 @@ int main(int argc, char **argv) try {
         throw "umfpack_di_solve failed";
     }
     printf("... SUCCESS: solution calculated\n");
+
+    if (verbose) {
+        umfpack_di_report_info(control, info);
+    }
 
     // check the solution
     auto rhs_new = std::vector<double>(coo->m, 0.0);
