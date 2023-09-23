@@ -126,3 +126,64 @@ Results (output of `./compare-1-and-2.bash`):
 ```
 
 When enforcing the `unsymmetric strategy`, the norm of the residual increases from `1.09071e-05` to `4189.11` when going from matrix `1` to matrix `2`.
+
+
+#### More results (with a newer UMFPACK)
+
+```text
+... FILE: pressurized-cylinder-linear-elastic-symmetric-1.mtx
+... UMFPACK V6.2 (Sept 18, 2023) demo: _di_ version
+... SUCCESS: matrix loaded
+... SUCCESS: CSC arrays allocated
+... SUCCESS: COO converted to CSC
+... SUCCESS: symbolic factorization completed
+... SUCCESS: numeric factorization completed
+... SUCCESS: solution calculated
+... max_norm of residual: 5.00222e-12
+... max_diff using COO  : 5.00222e-12
+... SUCCESS: numerical solution is within tolerance
+
+
+
+... FILE: pressurized-cylinder-linear-elastic-symmetric-1.mtx
+... ENFORCING UNSYMMETRIC STRATEGY
+... UMFPACK V6.2 (Sept 18, 2023) demo: _di_ version
+... SUCCESS: matrix loaded
+... SUCCESS: CSC arrays allocated
+... SUCCESS: COO converted to CSC
+... SUCCESS: symbolic factorization completed
+... SUCCESS: numeric factorization completed
+... SUCCESS: solution calculated
+... max_norm of residual: 1.09071e-05
+... max_diff using COO  : 1.09071e-05
+... FAIL: the error is too high
+
+
+
+... FILE: pressurized-cylinder-linear-elastic-symmetric-2.mtx
+... UMFPACK V6.2 (Sept 18, 2023) demo: _di_ version
+... SUCCESS: matrix loaded
+... SUCCESS: CSC arrays allocated
+... SUCCESS: COO converted to CSC
+... SUCCESS: symbolic factorization completed
+... SUCCESS: numeric factorization completed
+... SUCCESS: solution calculated
+... max_norm of residual: 5.05906e-12
+... max_diff using COO  : 5.05906e-12
+... SUCCESS: numerical solution is within tolerance
+
+
+
+... FILE: pressurized-cylinder-linear-elastic-symmetric-2.mtx
+... ENFORCING UNSYMMETRIC STRATEGY
+... UMFPACK V6.2 (Sept 18, 2023) demo: _di_ version
+... SUCCESS: matrix loaded
+... SUCCESS: CSC arrays allocated
+... SUCCESS: COO converted to CSC
+... SUCCESS: symbolic factorization completed
+... SUCCESS: numeric factorization completed
+... SUCCESS: solution calculated
+... max_norm of residual: 4189.11
+... max_diff using COO  : 4189.11
+... FAIL: the error is too high
+```
