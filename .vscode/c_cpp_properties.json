@@ -4,6 +4,7 @@
       "name": "Linux",
       "includePath": [
         "${default}",
+        "/usr/local/include/umfpack",
         "/usr/include/suitesparse"
       ],
       "compilerPath": "/usr/bin/gcc",

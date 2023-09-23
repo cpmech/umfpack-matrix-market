@@ -1,8 +1,10 @@
 set(UMFPACK_INCLUDE_SEARCH_PATH
-  /usr/include/suitesparse)
+  /usr/include/suitesparse
+  /usr/local/include/umfpack)
 
 set(UMFPACK_LIBRARY_SEARCH_PATH
-  /usr/lib/x86_64-linux-gnu/
+  /usr/lib/x86_64-linux-gnu
+  /usr/local/lib/umfpack
   /usr/lib)
 
 find_path(UMFPACK_AMD_H      amd.h      ${UMFPACK_INCLUDE_SEARCH_PATH})
