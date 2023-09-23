@@ -1,0 +1,21 @@
+{
+  "name": "UmfpackMatrixMarket",
+  "image": "cpmech/umfpack-matrix-market",
+  "runArgs": [
+    "--cap-add=SYS_PTRACE",
+    "--security-opt",
+    "seccomp=unconfined"
+  ],
+  "forwardPorts": [
+    9000
+  ],
+  "remoteUser": "vscode",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-vscode.cpptools",
+        "twxs.cmake"
+      ]
+    }
+  }
+}

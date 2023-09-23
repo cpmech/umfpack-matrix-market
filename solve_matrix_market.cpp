@@ -1,0 +1,191 @@
+#include "umfpack.h"
+#include <algorithm>
+#include <cmath>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <iostream>
+#include <memory>
+#include <string>
+#include <vector>
+
+struct CooMatrix {
+    int m;
+    int nnz;
+    int nnz_max;
+    bool symmetric;
+    bool triangular;
+    std::vector<int> indices_i;
+    std::vector<int> indices_j;
+    std::vector<double> values_aij;
+
+    inline static std::unique_ptr<CooMatrix> make_new(int m, int nnz_max) {
+        return std::unique_ptr<CooMatrix>{new CooMatrix{
+            m,
+            0,
+            nnz_max,
+            false,
+            false,
+            std::vector<int>(nnz_max, 0),
+            std::vector<int>(nnz_max, 0),
+            std::vector<double>(nnz_max, 0.0),
+        }};
+    }
+
+    void put(int i, int j, double aij) {
+        if (i < 0 || i >= static_cast<int>(this->m)) {
+            throw "CooMatrix::put: index of row is outside range";
+        }
+        if (j < 0 || j >= static_cast<int>(this->m)) {
+            throw "CooMatrix::put: index of column is outside range";
+        }
+        if (this->nnz >= this->nnz_max) {
+            throw "CooMatrix::put: max number of items has been exceeded";
+        }
+        this->indices_i[this->nnz] = i;
+        this->indices_j[this->nnz] = j;
+        this->values_aij[this->nnz] = aij;
+        this->nnz++;
+    }
+
+    void mat_vec_mul(std::vector<double> &v, double alpha, const std::vector<double> &u) {
+        if (v.size() != this->m) {
+            throw "sp_mat_vec_mul: size of v must be equal to the dimension of a";
+        }
+        if (u.size() != this->m) {
+            throw "sp_mat_vec_mul: size of u must be equal to the dimension of a";
+        }
+        // v = alpha * A * u
+        std::fill(v.begin(), v.end(), 0.0);
+        for (size_t k = 0; k < this->nnz; k++) {
+            auto i = this->indices_i[k];
+            auto j = this->indices_j[k];
+            auto aij = this->values_aij[k];
+            v[i] += alpha * aij * u[j];
+            if (this->triangular) {
+                if (i != j) {
+                    v[j] += alpha * aij * u[i];
+                }
+            }
+        }
+    }
+};
+
+std::unique_ptr<CooMatrix> read_matrix_market(const std::string &filename) {
+    FILE *f = fopen(filename.c_str(), "r");
+    if (f == NULL) {
+        std::cout << "filename = '" << filename << "'" << std::endl;
+        throw "read_matrix_market: cannot open file";
+    }
+
+    const int line_max = 500;
+    char line[line_max];
+
+    if (fgets(line, line_max, f) == NULL) {
+        fclose(f);
+        throw "read_matrix_market: cannot read any line in the file";
+    }
+
+    char mm[24], opt[24], fmt[24], kind[24], sym[24];
+    int nread = sscanf(line, "%24s %24s %24s %24s %24s", mm, opt, fmt, kind, sym);
+    if (nread != 5) {
+        fclose(f);
+        throw "read_matrix_market: number of tokens in the header is incorrect";
+    }
+    if (strncmp(mm, "%%MatrixMarket", 14) != 0) {
+        fclose(f);
+        throw "read_matrix_market: header must start with %%MatrixMarket";
+    }
+    if (strncmp(opt, "matrix", 6) != 0) {
+        fclose(f);
+        throw "read_matrix_market: option must be \"matrix\"";
+    }
+    if (strncmp(fmt, "coordinate", 10) != 0) {
+        fclose(f);
+        throw "read_matrix_market: type must be \"coordinate\"";
+    }
+    if (strncmp(kind, "real", 4) != 0) {
+        fclose(f);
+        throw "read_matrix_market: number kind must be \"real\"";
+    }
+    if (strncmp(sym, "general", 7) != 0 && strncmp(sym, "symmetric", 9) != 0) {
+        fclose(f);
+        throw "read_matrix_market: matrix must be \"general\" or \"symmetric\"";
+    }
+
+    std::unique_ptr<CooMatrix> coo;
+    bool symmetric = strncmp(sym, "symmetric", 9) == 0;
+
+    bool initialized = false;
+    size_t m, n, nnz_max, i, j;
+    double x;
+
+    while (fgets(line, line_max, f) != NULL) {
+        if (!initialized) {
+            if (line[0] == '%') {
+                continue;
+            }
+            nread = sscanf(line, "%zu %zu %zu", &m, &n, &nnz_max);
+            if (nread != 3) {
+                fclose(f);
+                throw "read_matrix_market: cannot parse the dimensions (m,n,nnz)";
+            }
+            if (symmetric) {
+                // umfpack_di_triplet_to_col requires both sides of the diagonal, and MatrixMarket
+                // is lower triangular. So, let's allocate more space than needed.
+                nnz_max *= 2;
+            }
+            coo = CooMatrix::make_new(m, nnz_max);
+            coo->symmetric = symmetric;
+            coo->triangular = false; // umfpack_di_triplet_to_col requires full matrix
+            initialized = true;
+        } else {
+            nread = sscanf(line, "%zu %zu %lg", &i, &j, &x);
+            if (nread != 3) {
+                fclose(f);
+                throw "read_matrix_market: cannot parse the values (i,j,x)";
+            }
+            coo->put(i - 1, j - 1, x);
+            if (symmetric) {
+                // umfpack_di_triplet_to_col requires full matrix
+                coo->put(j - 1, i - 1, x);
+            }
+        }
+    }
+
+    fclose(f);
+    return coo;
+}
+
+int main(int argc, char **argv) try {
+    // read the matrix
+    auto home = std::string(std::getenv("HOME"));
+    auto matrix = home + "/Downloads/matrix-market/bfwb62.mtx";
+
+    // read COO
+    auto coo = read_matrix_market(matrix);
+
+    // make the solution vector and rhs
+    auto rhs = std::vector<double>(coo->m, 1.0);
+    auto x = std::vector<double>(coo->m, 0.0);
+
+    auto rhs_new = std::vector<double>(coo->m, 0.0);
+    coo->mat_vec_mul(rhs_new, 1.0, x);
+    for (int k = 0; k < coo->m; k++) {
+        auto diff = fabs(rhs[k] - rhs_new[k]);
+        if (diff > 1e-10) {
+            std::cout << "diff[" << k << "] = " << diff << " is too high" << std::endl;
+            return 1;
+        }
+    }
+    return 0;
+
+} catch (std::exception &e) {
+    std::cout << e.what() << std::endl;
+} catch (std::string &msg) {
+    std::cout << msg.c_str() << std::endl;
+} catch (const char *msg) {
+    std::cout << msg << std::endl;
+} catch (...) {
+    std::cout << "some unknown exception happened" << std::endl;
+}
