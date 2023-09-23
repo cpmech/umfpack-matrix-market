@@ -25,6 +25,22 @@ bash ./compare-1-and-2.bash
 
 You may use an existent image from `cpmech` or build the Docker image yourself (see script `docker-build-image.bash`).
 
+Fetch the Docker image:
+
+```bash
+docker pull cpmech/umfpack-matrix-market
+```
+
+### Directly run the code in a temporary container
+
+```bash
+docker run --rm -it cpmech/umfpack-matrix-market:latest /bin/bash
+bash ./all.bash
+bash ./compare-1-and-2.bash
+```
+
+### Use VS Code Docker extension
+
 When using VS Code, the extension [ms-vscode-remote.remote-containers](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) is recommended.
 
 **1 Reopen this folder in a container**
@@ -32,6 +48,8 @@ When using VS Code, the extension [ms-vscode-remote.remote-containers](https://m
 ![VS Code Remote Development](remote-dev-with-vscode.gif)
 
 **2 Run Examples**
+
+Open a terminal within VS Code (with the container loaded) and type:
 
 ```bash
 bash ./all.bash
