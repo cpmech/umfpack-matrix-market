@@ -65,10 +65,11 @@ Note:
 1. `1` refers to `pressurized-cylinder-linear-elastic-symmetric-1.mtx` which is the global stiffness matrix of a finite element analysis of a pressurized cylinder modelled by linear elasticity.
 1. `2` refers to `pressurized-cylinder-linear-elastic-symmetric-2.mtx` is very similar to matrix `1`, however was created by a slightly finer mesh.
 
-Results:
+Results (output of `./compare-1-and-2.bash`):
 
 ```text
 ... FILE: pressurized-cylinder-linear-elastic-symmetric-1.mtx
+... UMFPACK V5.7 (Oct 20, 2019) demo: _di_ version
 ... SUCCESS: matrix loaded
 ... SUCCESS: CSC arrays allocated
 ... SUCCESS: COO converted to CSC
@@ -83,6 +84,7 @@ Results:
 
 ... FILE: pressurized-cylinder-linear-elastic-symmetric-1.mtx
 ... ENFORCING UNSYMMETRIC STRATEGY
+... UMFPACK V5.7 (Oct 20, 2019) demo: _di_ version
 ... SUCCESS: matrix loaded
 ... SUCCESS: CSC arrays allocated
 ... SUCCESS: COO converted to CSC
@@ -96,6 +98,7 @@ Results:
 
 
 ... FILE: pressurized-cylinder-linear-elastic-symmetric-2.mtx
+... UMFPACK V5.7 (Oct 20, 2019) demo: _di_ version
 ... SUCCESS: matrix loaded
 ... SUCCESS: CSC arrays allocated
 ... SUCCESS: COO converted to CSC
@@ -110,6 +113,7 @@ Results:
 
 ... FILE: pressurized-cylinder-linear-elastic-symmetric-2.mtx
 ... ENFORCING UNSYMMETRIC STRATEGY
+... UMFPACK V5.7 (Oct 20, 2019) demo: _di_ version
 ... SUCCESS: matrix loaded
 ... SUCCESS: CSC arrays allocated
 ... SUCCESS: COO converted to CSC
