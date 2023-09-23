@@ -1,5 +1,5 @@
-#include "umfpack.h"
 #include <algorithm>
+#include <cinttypes>
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
@@ -9,34 +9,36 @@
 #include <string>
 #include <vector>
 
+#include "umfpack.h"
+
 struct CooMatrix {
-    int m;
-    int nnz;
-    int nnz_max;
+    int32_t m;
+    int32_t nnz;
+    int32_t nnz_max;
     bool symmetric;
     bool triangular;
-    std::vector<int> indices_i;
-    std::vector<int> indices_j;
+    std::vector<int32_t> indices_i;
+    std::vector<int32_t> indices_j;
     std::vector<double> values_aij;
 
-    inline static std::unique_ptr<CooMatrix> make_new(int m, int nnz_max) {
+    inline static std::unique_ptr<CooMatrix> make_new(int32_t m, int32_t nnz_max) {
         return std::unique_ptr<CooMatrix>{new CooMatrix{
             m,
             0,
             nnz_max,
             false,
             false,
-            std::vector<int>(nnz_max, 0),
-            std::vector<int>(nnz_max, 0),
+            std::vector<int32_t>(nnz_max, 0),
+            std::vector<int32_t>(nnz_max, 0),
             std::vector<double>(nnz_max, 0.0),
         }};
     }
 
-    void put(int i, int j, double aij) {
-        if (i < 0 || i >= static_cast<int>(this->m)) {
+    void put(int32_t i, int32_t j, double aij) {
+        if (i < 0 || i >= this->m) {
             throw "CooMatrix::put: index of row is outside range";
         }
-        if (j < 0 || j >= static_cast<int>(this->m)) {
+        if (j < 0 || j >= this->m) {
             throw "CooMatrix::put: index of column is outside range";
         }
         if (this->nnz >= this->nnz_max) {
@@ -49,15 +51,15 @@ struct CooMatrix {
     }
 
     void mat_vec_mul(std::vector<double> &v, double alpha, const std::vector<double> &u) {
-        if (v.size() != this->m) {
+        if (v.size() != static_cast<size_t>(this->m)) {
             throw "sp_mat_vec_mul: size of v must be equal to the dimension of a";
         }
-        if (u.size() != this->m) {
+        if (u.size() != static_cast<size_t>(this->m)) {
             throw "sp_mat_vec_mul: size of u must be equal to the dimension of a";
         }
         // v = alpha * A * u
         std::fill(v.begin(), v.end(), 0.0);
-        for (size_t k = 0; k < this->nnz; k++) {
+        for (size_t k = 0; k < static_cast<size_t>(this->nnz); k++) {
             auto i = this->indices_i[k];
             auto j = this->indices_j[k];
             auto aij = this->values_aij[k];
@@ -164,20 +166,114 @@ int main(int argc, char **argv) try {
 
     // read COO
     auto coo = read_matrix_market(matrix);
+    printf("... SUCCESS: matrix loaded\n");
 
-    // make the solution vector and rhs
-    auto rhs = std::vector<double>(coo->m, 1.0);
+    // define the solution vector (x) and right-hand side (rhs)
+    auto rhs = std::vector<double>(coo->m, 1.0); // filled with ones
     auto x = std::vector<double>(coo->m, 0.0);
 
+    // default control parameters
+    double info[UMFPACK_INFO];
+    double control[UMFPACK_CONTROL];
+    umfpack_di_defaults(control);
+
+    // allocate CSC arrays
+    int32_t *ap = (int32_t *)malloc((coo->m + 1) * sizeof(int32_t));
+    if (ap == NULL) {
+        throw "cannot allocate ap array";
+    }
+    int32_t *ai = (int32_t *)malloc(coo->nnz * sizeof(int32_t));
+    if (ai == NULL) {
+        free(ap);
+        throw "cannot allocate ai array";
+    }
+    double *ax = (double *)malloc(coo->nnz * sizeof(double));
+    if (ax == NULL) {
+        free(ai);
+        free(ap);
+        throw "cannot allocate ax array";
+    }
+    printf("... SUCCESS: CSC arrays allocated\n");
+
+    // convert COO to CSC
+    auto status = umfpack_di_triplet_to_col(coo->m,
+                                            coo->m,
+                                            coo->nnz,
+                                            coo->indices_i.data(),
+                                            coo->indices_j.data(),
+                                            coo->values_aij.data(),
+                                            ap,
+                                            ai,
+                                            ax,
+                                            NULL);
+    if (status < 0) {
+        umfpack_di_report_status(control, status);
+        throw "umfpack_di_triplet_to_col failed";
+    }
+    printf("... SUCCESS: COO converted to CSC\n");
+
+    // symbolic factorization
+    void *symbolic;
+    status = umfpack_di_symbolic(coo->m,
+                                 coo->m,
+                                 ap,
+                                 ai,
+                                 ax,
+                                 &symbolic,
+                                 control,
+                                 info);
+    if (status < 0) {
+        umfpack_di_report_info(control, info);
+        umfpack_di_report_status(control, status);
+        throw "umfpack_di_symbolic failed";
+    }
+    printf("... SUCCESS: symbolic factorization completed\n");
+
+    // numeric factorization
+    void *numeric;
+    status = umfpack_di_numeric(ap,
+                                ai,
+                                ax,
+                                symbolic,
+                                &numeric,
+                                control,
+                                info);
+    if (status < 0) {
+        umfpack_di_report_info(control, info);
+        umfpack_di_report_status(control, status);
+        umfpack_di_free_symbolic(&symbolic);
+        throw "umfpack_di_numeric failed";
+    }
+    printf("... SUCCESS: numeric factorization completed\n");
+
+    // compute the solution A * x = rhs
+    status = umfpack_di_solve(UMFPACK_A,
+                              ap,
+                              ai,
+                              ax,
+                              x.data(),
+                              rhs.data(),
+                              numeric,
+                              control,
+                              info);
+    if (status < 0) {
+        umfpack_di_free_symbolic(&symbolic);
+        umfpack_di_free_numeric(&numeric);
+        throw "umfpack_di_solve failed";
+    }
+    printf("... SUCCESS: solution calculated\n");
+
+    // check the solution
     auto rhs_new = std::vector<double>(coo->m, 0.0);
     coo->mat_vec_mul(rhs_new, 1.0, x);
-    for (int k = 0; k < coo->m; k++) {
+    for (size_t k = 0; k < static_cast<size_t>(coo->m); k++) {
         auto diff = fabs(rhs[k] - rhs_new[k]);
         if (diff > 1e-10) {
             std::cout << "diff[" << k << "] = " << diff << " is too high" << std::endl;
             return 1;
         }
     }
+    printf("... SUCCESS: numerical solution is within tolerance\n");
     return 0;
 
 } catch (std::exception &e) {
