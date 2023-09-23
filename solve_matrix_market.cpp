@@ -340,6 +340,7 @@ int main(int argc, char **argv) try {
             max_diff = diff;
         }
     }
+    printf("... max_diff using COO  : %g\n", max_diff);
     const double TOLERANCE = 1e-10;
     if (max_diff > TOLERANCE) {
         printf("... FAIL: the error is too high\n");
