@@ -14,16 +14,11 @@ You may install UMFPACK locally or use a Docker container as explained in the ne
 sudo apt-get install libsuitesparse-dev
 ```
 
-**2 Download some Matrix Market Files**
-
-```bash
-bash scripts/download-from-matrix-market.bash
-```
-
-**3 Run Example**
+**2 Run Examples**
 
 ```bash
 bash ./all.bash
+bash ./compare-1-and-2.bash
 ```
 
 ## Using Docker
@@ -36,13 +31,7 @@ When using VS Code, the extension [ms-vscode-remote.remote-containers](https://m
 
 ![VS Code Remote Development](remote-dev-with-vscode.gif)
 
-**2 Download some Matrix Market Files**
-
-```bash
-bash scripts/download-from-matrix-market.bash
-```
-
-**3 Run Examples**
+**2 Run Examples**
 
 ```bash
 bash ./all.bash
