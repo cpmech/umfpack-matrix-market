@@ -42,8 +42,9 @@ When using VS Code, the extension [ms-vscode-remote.remote-containers](https://m
 bash scripts/download-from-matrix-market.bash
 ```
 
-**3 Run Example**
+**3 Run Examples**
 
 ```bash
 bash ./all.bash
+bash ./compare-1-and-2.bash
 ```
