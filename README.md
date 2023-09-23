@@ -14,21 +14,32 @@ You may install UMFPACK locally or use a Docker container as explained in the ne
 sudo apt-get install libsuitesparse-dev
 ```
 
-**2 Download some Matrix Market Files**
-
-```bash
-bash scripts/download-from-matrix-market.bash
-```
-
-**3 Run Example**
+**2 Run Examples**
 
 ```bash
 bash ./all.bash
+bash ./compare-1-and-2.bash
 ```
 
 ## Using Docker
 
 You may use an existent image from `cpmech` or build the Docker image yourself (see script `docker-build-image.bash`).
+
+Fetch the Docker image:
+
+```bash
+docker pull cpmech/umfpack-matrix-market
+```
+
+### Directly run the code in a temporary container
+
+```bash
+docker run --rm -it cpmech/umfpack-matrix-market:latest /bin/bash
+bash ./all.bash
+bash ./compare-1-and-2.bash
+```
+
+### Use VS Code Docker extension
 
 When using VS Code, the extension [ms-vscode-remote.remote-containers](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) is recommended.
 
@@ -36,14 +47,11 @@ When using VS Code, the extension [ms-vscode-remote.remote-containers](https://m
 
 ![VS Code Remote Development](remote-dev-with-vscode.gif)
 
-**2 Download some Matrix Market Files**
+**2 Run Examples**
 
-```bash
-bash scripts/download-from-matrix-market.bash
-```
-
-**3 Run Example**
+Open a terminal within VS Code (with the container loaded) and type:
 
 ```bash
 bash ./all.bash
+bash ./compare-1-and-2.bash
 ```

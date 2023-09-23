@@ -1,4 +1,4 @@
-FROM ubuntu:23.04
+FROM ubuntu:22.04
 
 # disable tzdata questions
 ENV DEBIAN_FRONTEND=noninteractive
