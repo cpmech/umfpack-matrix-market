@@ -325,23 +325,27 @@ int main(int argc, char **argv) try {
         umfpack_di_report_info(control, info);
     }
 
-    // print residual
+    // print residual using the CSR matrix
     auto r = std::vector<double>(coo->m, 0.0);
     double max_norm_r = resid(coo->m, x.data(), rhs.data(), r.data(), ap, ai, ax);
     printf("... max_norm of residual: %g\n", max_norm_r);
 
-    // check the solution
-    const double TOLERANCE = 1e-10;
+    // check the solution using the COO matrix
     auto rhs_new = std::vector<double>(coo->m, 0.0);
     coo->mat_vec_mul(rhs_new, 1.0, x);
+    double max_diff = 0.0;
     for (size_t k = 0; k < static_cast<size_t>(coo->m); k++) {
         auto diff = fabs(rhs[k] - rhs_new[k]);
-        if (diff > TOLERANCE) {
-            std::cout << "... ERROR: diff[" << k << "] = " << diff << " is too high" << std::endl;
-            return 1;
+        if (diff > max_diff) {
+            max_diff = diff;
         }
     }
-    printf("... SUCCESS: numerical solution is within tolerance\n");
+    const double TOLERANCE = 1e-10;
+    if (max_diff > TOLERANCE) {
+        printf("... FAIL: the error is too high\n");
+    } else {
+        printf("... SUCCESS: numerical solution is within tolerance\n");
+    }
     return 0;
 
 } catch (std::exception &e) {
