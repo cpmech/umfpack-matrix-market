@@ -216,6 +216,9 @@ int main(int argc, char **argv) try {
         printf("... ENFORCING UNSYMMETRIC STRATEGY\n");
     }
 
+    // print UMFPACK version
+    printf("... UMFPACK V%d.%d (%s) demo: _di_ version\n", UMFPACK_MAIN_VERSION, UMFPACK_SUB_VERSION, UMFPACK_DATE);
+
     // read COO
     auto coo = read_matrix_market(matrix);
     printf("... SUCCESS: matrix loaded\n");
