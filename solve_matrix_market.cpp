@@ -15,8 +15,7 @@
 #define MAX(a, b) (((a) > (b)) ? (a) : (b))
 
 static double resid(
-    // Code from UMFPACK
-    // resid: compute the residual, r = Ax-b or r = A'x=b and return max_norm (r)
+    // Code from UMFPACK: compute the residual, r = Ax-b and return max_norm(r)
     int32_t n,
     const double *x,
     const double *b,
