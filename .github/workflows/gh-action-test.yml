@@ -1,5 +1,5 @@
 name: Compile and Run Examples
-on: [push]
+on: [pull_request]
 jobs:
   test_and_coverage:
     runs-on: ubuntu-latest

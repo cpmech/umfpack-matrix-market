@@ -55,3 +55,70 @@ Open a terminal within VS Code (with the container loaded) and type:
 bash ./all.bash
 bash ./compare-1-and-2.bash
 ```
+
+## Results
+
+### Compare 1 vs 2
+
+Note:
+
+1. `1` refers to `pressurized-cylinder-linear-elastic-symmetric-1.mtx` which is the global stiffness matrix of a finite element analysis of a pressurized cylinder modelled by linear elasticity.
+1. `2` refers to `pressurized-cylinder-linear-elastic-symmetric-2.mtx` is very similar to matrix `1`, however was created by a slightly finer mesh.
+
+Results:
+
+```text
+... FILE: pressurized-cylinder-linear-elastic-symmetric-1.mtx
+... SUCCESS: matrix loaded
+... SUCCESS: CSC arrays allocated
+... SUCCESS: COO converted to CSC
+... SUCCESS: symbolic factorization completed
+... SUCCESS: numeric factorization completed
+... SUCCESS: solution calculated
+... max_norm of residual: 5.00222e-12
+... max_diff using COO  : 5.00222e-12
+... SUCCESS: numerical solution is within tolerance
+
+
+
+... FILE: pressurized-cylinder-linear-elastic-symmetric-1.mtx
+... ENFORCING UNSYMMETRIC STRATEGY
+... SUCCESS: matrix loaded
+... SUCCESS: CSC arrays allocated
+... SUCCESS: COO converted to CSC
+... SUCCESS: symbolic factorization completed
+... SUCCESS: numeric factorization completed
+... SUCCESS: solution calculated
+... max_norm of residual: 1.09071e-05
+... max_diff using COO  : 1.09071e-05
+... FAIL: the error is too high
+
+
+
+... FILE: pressurized-cylinder-linear-elastic-symmetric-2.mtx
+... SUCCESS: matrix loaded
+... SUCCESS: CSC arrays allocated
+... SUCCESS: COO converted to CSC
+... SUCCESS: symbolic factorization completed
+... SUCCESS: numeric factorization completed
+... SUCCESS: solution calculated
+... max_norm of residual: 5.05906e-12
+... max_diff using COO  : 5.05906e-12
+... SUCCESS: numerical solution is within tolerance
+
+
+
+... FILE: pressurized-cylinder-linear-elastic-symmetric-2.mtx
+... ENFORCING UNSYMMETRIC STRATEGY
+... SUCCESS: matrix loaded
+... SUCCESS: CSC arrays allocated
+... SUCCESS: COO converted to CSC
+... SUCCESS: symbolic factorization completed
+... SUCCESS: numeric factorization completed
+... SUCCESS: solution calculated
+... max_norm of residual: 4189.11
+... max_diff using COO  : 4189.11
+... FAIL: the error is too high
+```
+
+When enforcing the `unsymmetric strategy`, the norm of the residual increases from `1.09071e-05` to `4189.11` when going from matrix `1` to matrix `2`.
