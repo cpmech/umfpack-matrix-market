@@ -11,6 +11,37 @@
 
 #include "umfpack.h"
 
+#define ABS(x) ((x) >= 0 ? (x) : -(x))
+#define MAX(a, b) (((a) > (b)) ? (a) : (b))
+
+static double resid(
+    // Code from UMFPACK
+    // resid: compute the residual, r = Ax-b or r = A'x=b and return max_norm (r)
+    int32_t n,
+    const double *x,
+    const double *b,
+    double *r,
+    int32_t Ap[],
+    int32_t Ai[],
+    double Ax[]) {
+    int32_t i, j, p;
+    double norm;
+    for (i = 0; i < n; i++) {
+        r[i] = -b[i];
+    }
+    for (j = 0; j < n; j++) {
+        for (p = Ap[j]; p < Ap[j + 1]; p++) {
+            i = Ai[p];
+            r[i] += Ax[p] * x[j];
+        }
+    }
+    norm = 0.;
+    for (i = 0; i < n; i++) {
+        norm = MAX(ABS(r[i]), norm);
+    }
+    return norm;
+}
+
 struct CooMatrix {
     int32_t m;
     int32_t nnz;
@@ -160,15 +191,31 @@ std::unique_ptr<CooMatrix> read_matrix_market(const std::string &filename) {
 }
 
 int main(int argc, char **argv) try {
-    // read the matrix
+    // first argument: matrix name
     auto matrix = std::string("bfwb62.mtx");
-    bool verbose = false;
     if (argc > 1) {
         std::string arg1(argv[1]);
         matrix = arg1;
     }
+    std::cout << "... FILE: " << matrix << std::endl;
+
+    // second argument: verbose mode
+    bool verbose = false;
     if (argc > 2) {
-        verbose = true;
+        std::string arg2(argv[2]);
+        verbose = arg2 == "1";
+    }
+
+    // third argument: enforce unsymmetric strategy
+    bool enforce_unsymmetric = false;
+    if (argc > 3) {
+        std::string arg3(argv[3]);
+        enforce_unsymmetric = arg3 == "1";
+    }
+
+    // message
+    if (enforce_unsymmetric) {
+        printf("... ENFORCING UNSYMMETRIC STRATEGY\n");
     }
 
     // read COO
@@ -184,6 +231,11 @@ int main(int argc, char **argv) try {
     double control[UMFPACK_CONTROL];
     umfpack_di_defaults(control);
     control[UMFPACK_PRL] = 2.0;
+
+    // enforce unsymmetric strategy
+    if (enforce_unsymmetric) {
+        control[UMFPACK_STRATEGY] = UMFPACK_STRATEGY_UNSYMMETRIC;
+    }
 
     // allocate CSC arrays
     int32_t *ap = (int32_t *)malloc((coo->m + 1) * sizeof(int32_t));
@@ -275,13 +327,19 @@ int main(int argc, char **argv) try {
         umfpack_di_report_info(control, info);
     }
 
+    // print residual
+    auto r = std::vector<double>(coo->m, 0.0);
+    double max_norm_r = resid(coo->m, x.data(), rhs.data(), r.data(), ap, ai, ax);
+    printf("... max_norm of residual: %g\n", max_norm_r);
+
     // check the solution
+    const double TOLERANCE = 1e-10;
     auto rhs_new = std::vector<double>(coo->m, 0.0);
     coo->mat_vec_mul(rhs_new, 1.0, x);
     for (size_t k = 0; k < static_cast<size_t>(coo->m); k++) {
         auto diff = fabs(rhs[k] - rhs_new[k]);
-        if (diff > 1e-10) {
-            std::cout << "diff[" << k << "] = " << diff << " is too high" << std::endl;
+        if (diff > TOLERANCE) {
+            std::cout << "... ERROR: diff[" << k << "] = " << diff << " is too high" << std::endl;
             return 1;
         }
     }

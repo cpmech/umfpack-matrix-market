@@ -8,4 +8,14 @@ cd /tmp
 mkdir -p build-umfpack-matrix-market
 cd build-umfpack-matrix-market/
 cmake -S $SOURCE 
-make && ./solve_matrix_market
+make
+
+echo
+echo
+echo
+./solve_matrix_market bfwb62.mtx 1 0
+
+echo
+echo
+echo
+./solve_matrix_market bfwb62.mtx 1 1
